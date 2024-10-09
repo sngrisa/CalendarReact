@@ -7,98 +7,88 @@ import { useState } from "react";
 import { messages } from "../../lang/messages";
 import EventCalendar from "./eventCalendar/eventCalendar";
 import ModalCalendar from "./modalCalendar/modalCalendar";
+import { useStore } from "../../store/useStore";
+import ModalCalendarDetails from "./modalCalendarDetails/modalCalendarDetails";
 
 export interface IColorEventCalendar {
   backgroundColor: string;
   borderRadius: string;
-  opacity: number,
+  opacity: number;
   display: string;
   color: string;
 }
 
 export interface IEventCalendar {
-  title: string,
-  start: any,
-  end: any,
-  bgcolor: string,
-  notes: string,
-  user: IUserEvent
+  id?: string | number;
+  title: string;
+  start: Date; // Use Date for better type safety
+  end: Date; // Use Date for better type safety
+  bgcolor: string;
+  notes: string;
+  user: IUserEvent;
 }
 
 export interface IUserEvent {
-  _id: string,
-  name: string
+  _id: string;
+  name: string;
 }
-
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
-const CalendarComponent = ({ }) => {
+const CalendarComponent = () => {
 
-  const [lastView, setLastView] = useState(localStorage.getItem('lastChange') || 'month');
+  const { openModalDetails, openModal, events } = useStore();
 
-  const onHandledClick = (event: any) => {
-    console.log(event);
-  }
+  const [selectedEvent, setSelectedEvent] = useState<IEventCalendar>();
 
-  const onSelectedItem = (event: any) => {
+  const [lastView, setLastView] = useState<string>(localStorage.getItem('lastChange') || 'month');
 
-  }
+  const onHandledClick = (event: IEventCalendar) => {
+    openModal();
+  };
 
-  const onViewChange = (event: any): void => {
+  const onSelectedItem = (event: IEventCalendar) => {
+    useStore.getState().setSelectedEvent(event);
+    openModalDetails();
+};
+
+  const onViewChange = (event: string): void => {
     setLastView(event);
     localStorage.setItem('lastChange', event);
-  }
+  };
 
-  const eventStyleGetter = (event: any, start: any, end: any, isSelected: any) => {
+  const eventStyleGetter = (event: IEventCalendar) => {
     const style: IColorEventCalendar = {
       backgroundColor: 'darkblue',
       borderRadius: '0px',
       opacity: 0.8,
       display: 'block',
-      color: 'whitesmoke'
-    }
-    return {
-      style
-    }
-  }
-
-  const [evenList, setEvenList] = useState<IEventCalendar[]>([
-    {
-      title: "Locomia",
-      start: moment().toDate(),
-      end: moment().add(2, 'hours').toDate(),
-      bgcolor: "red",
-      notes: "Prosap",
-      user: {
-        _id: "1",
-        name: "Fernando Stetmann"
-      }
-    }
-  ]);
+      color: 'whitesmoke',
+    };
+    return { style };
+  };
 
   return (
-    <>
-      <div id="calendar-screen">
-        <Calendar
-          localizer={localizer}
-          events={evenList}
-          startAccessor="start"
-          endAccessor="end"
-          className="rbc-calendar"
-          messages={messages}
-          eventPropGetter={eventStyleGetter}
-          components={{ event: EventCalendar }}
-          onDoubleClickEvent={onHandledClick}
-          onSelectEvent={onSelectedItem}
-          onView={onViewChange}
-          view={lastView}
-        />
-        <ModalCalendar />
-      </div>
-    </>
+    <div id="calendar-screen">
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        className="rbc-calendar"
+        messages={messages}
+        eventPropGetter={eventStyleGetter}
+        components={{ event: EventCalendar }}
+        onDoubleClickEvent={onHandledClick}
+        onSelectEvent={onSelectedItem}
+        onView={onViewChange}
+        view={lastView}
+      />
+      <ModalCalendar />
+      <ModalCalendarDetails event={selectedEvent}/>
+    </div>
   );
-}
+};
 
 export default CalendarComponent;

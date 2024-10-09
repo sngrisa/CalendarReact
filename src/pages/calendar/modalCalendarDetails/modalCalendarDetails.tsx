@@ -2,19 +2,21 @@
 import { useEffect, useState } from 'react';
 import Modal from 'react-modal';
 import { MdError } from "react-icons/md";
-import { useStore } from './../../../store/useStore'; // Ajusta la ruta
+import { useStore } from '../../../store/useStore'; // Ajusta la ruta
 import { MdEventRepeat, MdOutlineEvent, MdEvent, MdOutlineSubtitles } from "react-icons/md";
 import { FaSave } from "react-icons/fa";
-import { IoAddCircle } from "react-icons/io5";
 import DateTimePicker from "react-datetime-picker";
 import 'react-datetime-picker/dist/DateTimePicker.css';
 import 'react-calendar/dist/Calendar.css';
 import 'react-clock/dist/Clock.css';
 import moment from 'moment';
-import { Alert, AlertDescription, AlertTitle } from "./../../../components/ui/alert";
-import { Button } from './../../../components/ui/button'; // Ajusta la ruta
-import "./modalCalendar.scss";
-import { IoIosCloseCircle } from "react-icons/io";
+import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
+import "./modalCalendarDetails.scss";
+import { GrUpdate } from "react-icons/gr";
+import { IEventCalendar } from '../calendar';
+import Swal from "sweetalert2";
+import { Button } from '../../../components/ui/button';
+import { IoIosCloseCircle } from 'react-icons/io';
 
 
 type ValuePiece = Date | any;
@@ -44,8 +46,8 @@ let subtitle: any = "";
 
 Modal.setAppElement('#root');
 
-const ModalCalendar = () => {
-    const { isModalOpen, closeModal, openModal, addEvent, events } = useStore();
+const ModalCalendarDetails = () => {
+    const { isModalOpenDetails, closeModalDetails, selectedEvent, updateEvent } = useStore();
     const now = moment().minute(0).seconds(0).add(1, 'hours');
     const nowPlus = now.clone().add(1, 'hours');
 
@@ -55,15 +57,26 @@ const ModalCalendar = () => {
     const [notesError, setNotesError] = useState<string | null>(null);
 
     const [formValues, setFormValues] = useState<IEventCalendarModal>({
-        title: "",
-        notes: "",
-        start: now.toDate(),
-        end: nowPlus.toDate()
+        title: selectedEvent?.title || '',
+        notes: selectedEvent?.notes || '',
+        start: selectedEvent?.start || new Date(),
+        end: selectedEvent?.end || new Date(),
     });
 
     const [validField, setValidField] = useState<boolean>(false);
 
     const { title, notes, start, end } = formValues;
+
+    useEffect(() => {
+        if (selectedEvent) {
+            setFormValues({
+                title: selectedEvent.title,
+                notes: selectedEvent.notes,
+                start: selectedEvent.start,
+                end: selectedEvent.end,
+            });
+        }
+    }, [selectedEvent]);
 
 
     const afterOpenModal = (): void => {
@@ -74,24 +87,9 @@ const ModalCalendar = () => {
         setFormValues({
             ...formValues,
             [target.name]: target.value
-        });
+        })
 
-        if (target.name === "title") {
-            if (target.value.trim().length < 2) {
-                setTitleError("El título debe tener al menos 2 caracteres.");
-            } else {
-                setTitleError(null);
-            }
-        }
-
-        if (target.name === "notes") {
-            if (target.value.trim().length < 5) {
-                setNotesError("Las notas deben tener al menos 5 caracteres.");
-            } else {
-                setNotesError(null);
-            }
-        }
-    };
+    }
 
     const startHandledDate = (event: any) => {
         setDate(event);
@@ -109,7 +107,7 @@ const ModalCalendar = () => {
         })
     }
 
-    const handleSubmitForm = (event: any) => {
+    const handleSubmit = (event: any) => {
         event.preventDefault();
 
         const memoStart = moment(start);
@@ -125,59 +123,60 @@ const ModalCalendar = () => {
             setValidField(false);
             return;
         }
-
         setValidField(true);
-        addEvent({
-            title: formValues.title,
-            start: formValues.start,
-            end: formValues.end,
-            bgcolor: 'darkblue',
-            notes: formValues.notes,
-            user: {
-                _id: '1',
-                name: 'Fernando Stetmann',
-            },
-        });
+        if (selectedEvent) {
+            const updatedEvent = {
+                ...selectedEvent,
+                title,
+                notes,
+                start: date,
+                end: dateEnd,
+            };
+            updateEvent(updatedEvent);
+            closeModalDetails();
+        }
+    };
 
-        closeModal();
+    const handleDeleteEvent = () => {
+        if (selectedEvent) {
+            useStore.getState().removeEvent(selectedEvent.user._id);
+            closeModalDetails();
+        }
     };
 
 
     const alertInfo = (msg: string, msg2: string, iconFile: string): void => {
-        /* Swal?.fire({
-            icon: ${iconFile},
-            title: ${msg},
-            text: ${msg2},
+        Swal?.fire({
+            icon: `${iconFile}`,
+            title: `${msg}`,
+            text: `${msg2}`,
             confirmButtonText: "Aceptar",
-        }); */
+        });
     }
 
     return (
         <>
             <div className='flex items-center justify-center mx-auto mb-10'>
-                <Button onClick={openModal} className="bg-blue-500 text-white px-4 py-2 rounded font-bold mt-12 hover:bg-slate-500">
-                    <span className='mr-2 h-12 w-auto flex items-center'><IoAddCircle /></span> Añadir Evento
-                </Button>
                 <Modal
-                    isOpen={isModalOpen}
+                    isOpen={isModalOpenDetails}
                     onAfterOpen={afterOpenModal}
-                    onRequestClose={closeModal}
+                    onRequestClose={closeModalDetails}
                     style={customStyles}
                     contentLabel="Example Modal"
-                    className="modal-addevent cursor-pointer"
+                    className="modal cursor-pointer"
                     overlayClassName="modal-fondo"
                     closeTimeoutMS={200}
                 >
                     <div className='flex items-end justify-end'>
-                        <Button className='text-white border closebutton bg-red-600 hover:bg-red-700' onClick={closeModal}><span className='text-2xl'><IoIosCloseCircle /></span></Button>
+                        <Button className='text-white border closebutton bg-red-600 hover:bg-red-700' onClick={closeModalDetails}><span className='text-2xl'><IoIosCloseCircle /></span></Button>
                     </div>
 
                     <h1 className="text-2xl font-bold mb-4 flex items-center justify-center cursor-pointer">
-                        <span className='mr-2 text-red-700'><MdEventRepeat /></span>
-                        Nuevo evento
+                        <span className='mr-2 text-green-700'><MdEventRepeat /></span>
+                        {selectedEvent?.title.toUpperCase()}
                     </h1>
                     <hr className="mb-4" />
-                    <form className="container mx-auto" onSubmit={handleSubmitForm} autoComplete='off'>
+                    <form className="container mx-auto" onSubmit={handleSubmit} autoComplete='off'>
                         <div className="mb-4">
                             <label className="text-sm mb-1 font-bold flex items-center justify-center">
                                 <span className='mr-2 text-2xl text-green-800'><MdOutlineEvent /></span>
@@ -229,12 +228,13 @@ const ModalCalendar = () => {
                                     </AlertDescription>
                                 </Alert>
                             }
+
                         </div>
                         <div className="mb-4">
                             <textarea
-                                className="block w-full border border-gray-300 rounded-lg px-3 py-2 notes"
+                                className="block w-full border border-gray-300 notes rounded-lg px-3 py-2"
                                 placeholder="Notas"
-                                rows="4"
+                                rows="3"
                                 name="notes"
                                 value={notes}
                                 onChange={InputChange}
@@ -249,12 +249,20 @@ const ModalCalendar = () => {
                                 </Alert>
                             }
                         </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-blue-600 transition duration-200"
-                        >
-                            <span className='mr-2 font-bold text-lg'><FaSave /></span>Guardar
-                        </button>
+                        <div className='grid grid-cols-2'>
+                            <button
+                                type="submit"
+                                className="w-full bg-green-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-green-800 transition duration-200"
+                            >
+                                <span className='mr-2 font-bold text-lg'><GrUpdate /></span>Actualizar Evento
+                            </button>
+                            <button
+                                type='button' onClick={handleDeleteEvent}
+                                className="w-full bg-red-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-red-800 transition duration-200"
+                            >
+                                <span className='mr-2 font-bold text-lg'><GrUpdate /></span>Eliminar Evento
+                            </button>
+                        </div>
                     </form>
                 </Modal>
             </div>
@@ -262,4 +270,4 @@ const ModalCalendar = () => {
     );
 };
 
-export default ModalCalendar;
+export default ModalCalendarDetails;
