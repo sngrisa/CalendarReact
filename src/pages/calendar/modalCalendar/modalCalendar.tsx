@@ -1,5 +1,6 @@
+"use client"
 // @ts-ignore
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Modal from 'react-modal';
 import { MdError } from "react-icons/md";
 import { useStore } from './../../../store/useStore'; // Ajusta la ruta
@@ -15,12 +16,14 @@ import { Alert, AlertDescription, AlertTitle } from "./../../../components/ui/al
 import { Button } from './../../../components/ui/button'; // Ajusta la ruta
 import "./modalCalendar.scss";
 import { IoIosCloseCircle } from "react-icons/io";
+import Swal, { SweetAlertIcon } from 'sweetalert2';
 
 
 type ValuePiece = Date | any;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 export interface IEventCalendarModal {
+    _id?: number | string;
     title: string;
     notes: string;
     start: Date;
@@ -40,12 +43,13 @@ const customStyles = {
     },
 };
 
-let subtitle: any = "";
+
 
 Modal.setAppElement('#root');
 
 const ModalCalendar = () => {
-    const { isModalOpen, closeModal, openModal, addEvent, events } = useStore();
+    const subtitleRef = useRef<any>();
+    const { isModalOpen, closeModal, openModal, addEvent } = useStore();
     const now = moment().minute(0).seconds(0).add(1, 'hours');
     const nowPlus = now.clone().add(1, 'hours');
 
@@ -53,6 +57,7 @@ const ModalCalendar = () => {
     const [dateEnd, setDateEnd] = useState<Value>(nowPlus.toDate());
     const [titleError, setTitleError] = useState<string | null>(null);
     const [notesError, setNotesError] = useState<string | null>(null);
+    const [id, setId] = useState<number>(0);
 
     const [formValues, setFormValues] = useState<IEventCalendarModal>({
         title: "",
@@ -61,14 +66,14 @@ const ModalCalendar = () => {
         end: nowPlus.toDate()
     });
 
-    const [validField, setValidField] = useState<boolean>(false);
-
     const { title, notes, start, end } = formValues;
 
 
     const afterOpenModal = (): void => {
-        subtitle.style.color = '#f00';
-    }
+        if (subtitleRef.current) {
+            subtitleRef.current.style.color = '#f00';
+        }
+    };
 
     const InputChange = ({ target }: { target: any }) => {
         setFormValues({
@@ -112,52 +117,57 @@ const ModalCalendar = () => {
     const handleSubmitForm = (event: any) => {
         event.preventDefault();
 
-        const memoStart = moment(start);
-        const memoEnd = moment(end);
+        const memoStart = moment(formValues.start);
+        const memoEnd = moment(formValues.end);
 
+        // Validar que la fecha de inicio sea anterior a la de fin
         if (memoStart.isSameOrAfter(memoEnd)) {
             alertInfo("La fecha de inicio debe ser anterior a la fecha de fin", "Verifique las fechas ingresadas", "error");
             return;
         }
 
+        // Validar que el título tenga al menos 2 caracteres
         if (title.trim().length < 2) {
             alertInfo("El campo de título no puede estar vacío", "El título debe tener al menos 2 caracteres", "error");
-            setValidField(false);
             return;
         }
 
-        setValidField(true);
-        addEvent({
+        const newEvent: any = {
+            _id: id,
             title: formValues.title,
-            start: formValues.start,
-            end: formValues.end,
+            start: memoStart.toDate(), // Asegúrate de que esto sea un objeto Date válido
+            end: memoEnd.toDate(), // Asegúrate de que esto sea un objeto Date válido
             bgcolor: 'darkblue',
             notes: formValues.notes,
             user: {
                 _id: '1',
                 name: 'Fernando Stetmann',
             },
-        });
+        };
 
+        addEvent(newEvent);
         closeModal();
+        setId(id + 1);
     };
 
-
-    const alertInfo = (msg: string, msg2: string, iconFile: string): void => {
-        /* Swal?.fire({
-            icon: ${iconFile},
-            title: ${msg},
-            text: ${msg2},
+    const alertInfo = (msg: string, msg2: string, iconFile: SweetAlertIcon): void => {
+        Swal.fire({
+            icon: iconFile,
+            title: msg,
+            text: msg2,
             confirmButtonText: "Aceptar",
-        }); */
-    }
+        });
+    };
 
     return (
         <>
-            <div className='flex items-center justify-center mx-auto mb-10'>
-                <Button onClick={openModal} className="bg-blue-500 text-white px-4 py-2 rounded font-bold mt-12 hover:bg-slate-500">
-                    <span className='mr-2 h-12 w-auto flex items-center'><IoAddCircle /></span> Añadir Evento
-                </Button>
+            <div className='container mx-auto mb-10'>
+                <section className='flex items-start justify-start'>
+                    <Button onClick={openModal} className="bg-black w-full text-white px-4 py-2 rounded font-bold mt-12 hover:bg-slate-500">
+                        <span className='h-12 w-auto flex items-center mr-2'><IoAddCircle /></span>Añadir Evento
+                    </Button>
+                </section>
+
                 <Modal
                     isOpen={isModalOpen}
                     onAfterOpen={afterOpenModal}
@@ -168,13 +178,9 @@ const ModalCalendar = () => {
                     overlayClassName="modal-fondo"
                     closeTimeoutMS={200}
                 >
-                    <div className='flex items-end justify-end'>
-                        <Button className='text-white border closebutton bg-red-600 hover:bg-red-700' onClick={closeModal}><span className='text-2xl'><IoIosCloseCircle /></span></Button>
-                    </div>
-
                     <h1 className="text-2xl font-bold mb-4 flex items-center justify-center cursor-pointer">
                         <span className='mr-2 text-red-700'><MdEventRepeat /></span>
-                        Nuevo evento
+                        {title}
                     </h1>
                     <hr className="mb-4" />
                     <form className="container mx-auto" onSubmit={handleSubmitForm} autoComplete='off'>
@@ -249,12 +255,15 @@ const ModalCalendar = () => {
                                 </Alert>
                             }
                         </div>
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-blue-600 transition duration-200"
-                        >
-                            <span className='mr-2 font-bold text-lg'><FaSave /></span>Guardar
-                        </button>
+                        <div className='grid grid-cols-2'>
+                            <Button
+                                type="submit"
+                                className="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-blue-600 transition duration-200"
+                            >
+                                <span className='mr-2 font-bold text-lg'><FaSave /></span>Guardar
+                            </Button>
+                            <Button className='text-white border bg-red-600 hover:bg-red-700' onClick={closeModal}><span className='text-2xl'><IoIosCloseCircle /></span>Cerrar</Button>
+                        </div>
                     </form>
                 </Modal>
             </div>

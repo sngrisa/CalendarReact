@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/home/home";
 import { lazy, Suspense } from "react";
+import CalendarComponent from "../pages/calendar/calendar";
 
 // Lazy load the AuthRouter
 const AuthRouter = lazy(() => import('./../pages/auth/router/authRouter'));
@@ -10,6 +11,7 @@ const RoutesConfig = () => {
         <Suspense fallback={<div>Loading...</div>}>
             <Routes>
                 <Route path="/" index element={<Home />} />
+                <Route path="/calendar" element={<CalendarComponent />} />
                 <Route path="/auth/*" element={<AuthRouter />} />
             </Routes>
         </Suspense>

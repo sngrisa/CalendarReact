@@ -10,70 +10,47 @@ import ModalCalendar from "./modalCalendar/modalCalendar";
 import { useStore } from "../../store/useStore";
 import ModalCalendarDetails from "./modalCalendarDetails/modalCalendarDetails";
 
-export interface IColorEventCalendar {
-  backgroundColor: string;
-  borderRadius: string;
-  opacity: number;
-  display: string;
-  color: string;
-}
-
-export interface IEventCalendar {
-  id?: string | number;
-  title: string;
-  start: Date; // Use Date for better type safety
-  end: Date; // Use Date for better type safety
-  bgcolor: string;
-  notes: string;
-  user: IUserEvent;
-}
-
-export interface IUserEvent {
-  _id: string;
-  name: string;
-}
-
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
 const CalendarComponent = () => {
-
   const { openModalDetails, openModal, events } = useStore();
-
-  const [selectedEvent, setSelectedEvent] = useState<IEventCalendar>();
-
   const [lastView, setLastView] = useState<string>(localStorage.getItem('lastChange') || 'month');
 
-  const onHandledClick = (event: IEventCalendar) => {
+  const onHandledClick = () => {
     openModal();
   };
 
-  const onSelectedItem = (event: IEventCalendar) => {
+  const onSelectedItem = (event: any) => {
     useStore.getState().setSelectedEvent(event);
     openModalDetails();
-};
+  };
 
-  const onViewChange = (event: string): void => {
+  const onViewChange = (event: string) => {
     setLastView(event);
     localStorage.setItem('lastChange', event);
   };
 
-  const eventStyleGetter = (event: IEventCalendar) => {
-    const style: IColorEventCalendar = {
+  const eventStyleGetter = () => ({
+    style: {
       backgroundColor: 'darkblue',
       borderRadius: '0px',
       opacity: 0.8,
       display: 'block',
       color: 'whitesmoke',
-    };
-    return { style };
-  };
+    }
+  });
 
   return (
     <div id="calendar-screen">
+      <ModalCalendar />
       <Calendar
         localizer={localizer}
-        events={events}
+        events={events.map(event => ({
+          ...event,
+          start: new Date(event.start), // Asegúrate de que sea un objeto Date
+          end: new Date(event.end), // Asegúrate de que sea un objeto Date
+        }))}
         startAccessor="start"
         endAccessor="end"
         className="rbc-calendar"
@@ -85,8 +62,8 @@ const CalendarComponent = () => {
         onView={onViewChange}
         view={lastView}
       />
-      <ModalCalendar />
-      <ModalCalendarDetails event={selectedEvent}/>
+      
+      <ModalCalendarDetails />
     </div>
   );
 };

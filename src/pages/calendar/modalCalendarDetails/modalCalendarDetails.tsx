@@ -1,10 +1,9 @@
 // @ts-ignore
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Modal from 'react-modal';
 import { MdError } from "react-icons/md";
 import { useStore } from '../../../store/useStore'; // Ajusta la ruta
 import { MdEventRepeat, MdOutlineEvent, MdEvent, MdOutlineSubtitles } from "react-icons/md";
-import { FaSave } from "react-icons/fa";
 import DateTimePicker from "react-datetime-picker";
 import 'react-datetime-picker/dist/DateTimePicker.css';
 import 'react-calendar/dist/Calendar.css';
@@ -13,14 +12,14 @@ import moment from 'moment';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import "./modalCalendarDetails.scss";
 import { GrUpdate } from "react-icons/gr";
-import { IEventCalendar } from '../calendar';
 import Swal from "sweetalert2";
 import { Button } from '../../../components/ui/button';
-import { IoIosCloseCircle } from 'react-icons/io';
+import { IoIosCloseCircle } from "react-icons/io";
 
 
 type ValuePiece = Date | any;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
+type SweetAlertIcon = 'success' | 'error' | 'warning' | 'info' | 'question';
 
 export interface IEventCalendarModal {
     title: string;
@@ -47,6 +46,7 @@ let subtitle: any = "";
 Modal.setAppElement('#root');
 
 const ModalCalendarDetails = () => {
+    const subtitleRef = useRef<any>();
     const { isModalOpenDetails, closeModalDetails, selectedEvent, updateEvent } = useStore();
     const now = moment().minute(0).seconds(0).add(1, 'hours');
     const nowPlus = now.clone().add(1, 'hours');
@@ -63,13 +63,12 @@ const ModalCalendarDetails = () => {
         end: selectedEvent?.end || new Date(),
     });
 
-    const [validField, setValidField] = useState<boolean>(false);
-
     const { title, notes, start, end } = formValues;
 
     useEffect(() => {
         if (selectedEvent) {
             setFormValues({
+                _id: selectedEvent._id,
                 title: selectedEvent.title,
                 notes: selectedEvent.notes,
                 start: selectedEvent.start,
@@ -80,8 +79,10 @@ const ModalCalendarDetails = () => {
 
 
     const afterOpenModal = (): void => {
-        subtitle.style.color = '#f00';
-    }
+        if (subtitleRef.current) {
+            subtitleRef.current.style.color = '#f00';
+        }
+    };
 
     const InputChange = ({ target }: { target: any }) => {
         setFormValues({
@@ -120,10 +121,8 @@ const ModalCalendarDetails = () => {
 
         if (title.trim().length < 2) {
             alertInfo("El campo de título no puede estar vacío", "El título debe tener al menos 2 caracteres", "error");
-            setValidField(false);
             return;
         }
-        setValidField(true);
         if (selectedEvent) {
             const updatedEvent = {
                 ...selectedEvent,
@@ -132,27 +131,28 @@ const ModalCalendarDetails = () => {
                 start: date,
                 end: dateEnd,
             };
-            updateEvent(updatedEvent);
+
+            updateEvent(updatedEvent)
             closeModalDetails();
         }
     };
 
     const handleDeleteEvent = () => {
         if (selectedEvent) {
-            useStore.getState().removeEvent(selectedEvent.user._id);
+            useStore.getState().removeEvent(selectedEvent._id);
             closeModalDetails();
         }
     };
 
 
-    const alertInfo = (msg: string, msg2: string, iconFile: string): void => {
-        Swal?.fire({
-            icon: `${iconFile}`,
-            title: `${msg}`,
-            text: `${msg2}`,
+    const alertInfo = (msg: string, msg2: string, iconFile: SweetAlertIcon): void => {
+        Swal.fire({
+            icon: iconFile,
+            title: msg,
+            text: msg2,
             confirmButtonText: "Aceptar",
         });
-    }
+    };
 
     return (
         <>
@@ -167,10 +167,6 @@ const ModalCalendarDetails = () => {
                     overlayClassName="modal-fondo"
                     closeTimeoutMS={200}
                 >
-                    <div className='flex items-end justify-end'>
-                        <Button className='text-white border closebutton bg-red-600 hover:bg-red-700' onClick={closeModalDetails}><span className='text-2xl'><IoIosCloseCircle /></span></Button>
-                    </div>
-
                     <h1 className="text-2xl font-bold mb-4 flex items-center justify-center cursor-pointer">
                         <span className='mr-2 text-green-700'><MdEventRepeat /></span>
                         {selectedEvent?.title.toUpperCase()}
@@ -250,19 +246,21 @@ const ModalCalendarDetails = () => {
                             }
                         </div>
                         <div className='grid grid-cols-2'>
-                            <button
+                            <Button
                                 type="submit"
                                 className="w-full bg-green-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-green-800 transition duration-200"
                             >
                                 <span className='mr-2 font-bold text-lg'><GrUpdate /></span>Actualizar Evento
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type='button' onClick={handleDeleteEvent}
                                 className="w-full bg-red-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center hover:bg-red-800 transition duration-200"
                             >
                                 <span className='mr-2 font-bold text-lg'><GrUpdate /></span>Eliminar Evento
-                            </button>
+                            </Button>
                         </div>
+                        <Button type='button' onClick={closeModalDetails}
+                            className="flex items-center w-full bg-red-700 mt-4 text-white font-semibold py-2 rounded-lg justify-center hover:bg-red-800 transition duration-200"><span className='text-2xl mr-1'><IoIosCloseCircle /></span>Cerrar</Button>
                     </form>
                 </Modal>
             </div>

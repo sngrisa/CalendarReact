@@ -1,6 +1,7 @@
 
 import './App.css';
 import RoutesConfig from './routes/routes.config';
+import Footer from './shared/footer/footer';
 import Navbar from './shared/navbar/navbar';
 
 function App() {
@@ -8,10 +9,10 @@ function App() {
   return (
     <>
       <Navbar />
-      <div className='container mx-auto gap-4 cursor-pointer mb-20 mt-10'>
+      <div className='cursor-pointer mb-20 mt-30'>
         <RoutesConfig />
       </div>
-
+      <Footer />
     </>
   )
 }

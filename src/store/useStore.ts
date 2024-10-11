@@ -1,25 +1,31 @@
 import { create } from 'zustand';
-import { IEventCalendar } from '../pages/calendar/calendar';
 
 export interface IUserEvent {
     _id: string;
     name: string;
 }
 
+export interface ICalendarEvent {
+    _id: number;
+    notes: string;
+    start: Date;
+    end: Date;
+}
+
 interface StoreState {
     isModalOpen: boolean;
     isModalOpenDetails: boolean;
-    events: IEventCalendar[];
-    selectedEvent: IEventCalendar | null;
+    events: ICalendarEvent[];
+    selectedEvent: ICalendarEvent | any;
     openModal: () => void;
     closeModal: () => void;
-    addEvent: (event: IEventCalendar) => void;
-    removeEvent: (id: string) => void;
-    updateEvent: (updatedEvent: IEventCalendar) => void;
-    getEvent: (id: string) => IEventCalendar | undefined;
+    addEvent: (event: ICalendarEvent) => void;
+    removeEvent: (_id: number) => void;
+    updateEvent: (updatedEvent: ICalendarEvent) => void;
+    getEvent: (_id: string | number) => ICalendarEvent | undefined;
     openModalDetails: () => void;
     closeModalDetails: () => void;
-    setSelectedEvent: (event: any) => void;
+    setSelectedEvent: (event: ICalendarEvent) => void;
 }
 
 const useStore = create<StoreState>((set, get) => ({
@@ -28,23 +34,23 @@ const useStore = create<StoreState>((set, get) => ({
     events: [],
     selectedEvent: null,
     openModal: () => set({ isModalOpen: true }),
-    openModalDetails: () => set({isModalOpenDetails: true}),
+    openModalDetails: () => set({ isModalOpenDetails: true }),
     closeModal: () => set({ isModalOpen: false }),
-    closeModalDetails: () => set({isModalOpenDetails: false}),
-    addEvent: (event: IEventCalendar) => set((state) => ({ events: [...state.events, event] })),
-    removeEvent: (id: string) => set((state) => ({
-        events: state.events.filter(event => event.user._id !== id)
+    closeModalDetails: () => set({ isModalOpenDetails: false }),
+    addEvent: (event: ICalendarEvent) => set((state) => ({ events: [...state.events, event] })),
+    removeEvent: (_id: string | number) => set((state) => ({
+        events: state.events.filter((event: ICalendarEvent) => event._id !== _id)
     })),
-    updateEvent: (updatedEvent: IEventCalendar) => set((state) => ({
-        events: state.events.map((event: any) =>
-            event.id === updatedEvent.id ? updatedEvent : event
+    updateEvent: (updatedEvent: ICalendarEvent) => set((state) => ({
+        events: state.events.map((event: ICalendarEvent) =>
+            event._id === updatedEvent._id ? updatedEvent : event
         )
     })),
-    getEvent: (id: string) => {
+    getEvent: (_id: string | number) => {
         const state = get();
-        return state.events.find(event => event.user._id === id);
+        return state.events.find(event => event._id === _id);
     },
-    setSelectedEvent: (event: any) => set({ selectedEvent: event })
+    setSelectedEvent: (event: ICalendarEvent) => set({ selectedEvent: event })
 }));
 
 export { useStore };
