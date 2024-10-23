@@ -1,0 +1,61 @@
+.ReactModalPortal > div{
+    opacity: 0;
+}
+
+.ReactModalPortal .ReactModal__Overlay {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    transition: opacity .2s ease-in-out;
+    z-index: 999;
+}
+
+.modal-fondo {
+    background-color: rgba(0, 0, 0, 0.3);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    position: fixed;
+}
+
+.ReactModalPortal .ReactModal__Overlay--after-open {
+    opacity: 1;
+}
+
+.ReactModalPortal .ReactModal__Overlay--before-close {
+    opacity: 0;
+}
+
+.modal {
+    background: white;
+    border-radius: 5px;
+    color: rgb(51, 51, 51);
+    max-width: 90%; /* Asegúrate de que el modal no ocupe más del 90% del ancho de la pantalla */
+    width: 500px; /* Establece un ancho fijo que será el máximo en pantallas grandes */
+    max-height: 90%; /* Permite que el modal se ajuste a un 90% de la altura de la ventana */
+    overflow: auto; /* Añade scroll si el contenido excede la altura */
+    outline: none;
+    padding: 20px; /* Aumenta el padding para mejor estética */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Añade una sombra para darle profundidad */
+    position: relative; /* Asegura que el modal se posicione correctamente */
+}
+
+@media (max-width: 768px) {
+    .modal {
+        width: 95%; /* Para pantallas más pequeñas, utiliza un ancho del 95% */
+        height: auto; /* Deja que la altura se ajuste automáticamente */
+    }
+}
+
+.date-time-picker:focus{
+    outline: none !important;
+}
+
+.date-time-picker_wrapper{
+    border: 0px solid gray !important;
+}
+
+.notes{
+    resize: none !important;
+}
